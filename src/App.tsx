@@ -13,6 +13,10 @@ interface Message {
   username: string;
   timestamp: { seconds: number };
   isRead: boolean;
+  replyTo?: {
+    username: string;
+    text: string;
+  };
 }
 
 function App() {
@@ -21,6 +25,11 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [replyTo, setReplyTo] = useState<{
+    id?: string;
+    username: string;
+    text: string;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -48,6 +57,18 @@ function App() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const handleReply = (message: {
+    id?: string;
+    username: string;
+    text: string;
+  }) => {
+    setReplyTo(message);
+  };
+
+  const clearReply = () => {
+    setReplyTo(null);
+  };
 
   const handleTyping = async () => {
     if (!username) return;
@@ -80,9 +101,14 @@ function App() {
         text: newMessage,
         username,
         timestamp: serverTimestamp(),
-        isRead: false
+        isRead: false,
+        replyTo: replyTo ? {
+          username: replyTo.username,
+          text: replyTo.text
+        } : undefined
       });
       setNewMessage('');
+      clearReply();
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -109,6 +135,7 @@ function App() {
               key={message.id}
               message={message}
               isOwnMessage={message.username === username}
+              onReply={handleReply}
             />
           ))}
           {typingUsers.map(user => (
@@ -122,6 +149,8 @@ function App() {
           setNewMessage={setNewMessage}
           onSubmit={handleSubmit}
           onTyping={handleTyping}
+          replyTo={replyTo}
+          clearReply={clearReply}
         />
       </div>
     </div>

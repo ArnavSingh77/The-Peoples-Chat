@@ -1,11 +1,16 @@
 import React from 'react';
-import { Send } from 'lucide-react';
+import { Send, X } from 'lucide-react';
 
 interface MessageInputProps {
   newMessage: string;
   setNewMessage: (message: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   onTyping: () => void;
+  replyTo?: {
+    username: string;
+    text: string;
+  };
+  clearReply: () => void;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({
@@ -13,9 +18,28 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   setNewMessage,
   onSubmit,
   onTyping,
+  replyTo,
+  clearReply,
 }) => {
   return (
     <form onSubmit={onSubmit} className="p-4 bg-card border-t border-border">
+      {replyTo && (
+        <div className="mb-2 bg-secondary/50 rounded-lg p-2 flex items-center justify-between">
+          <div>
+            <span className="text-xs font-semibold block">
+              Replying to {replyTo.username}
+            </span>
+            <p className="text-xs truncate">{replyTo.text}</p>
+          </div>
+          <button 
+            type="button" 
+            onClick={clearReply}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       <div className="flex gap-2">
         <input
           type="text"
