@@ -12,7 +12,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({ username }) => {
   return (
     <header className="bg-card border-b border-border p-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-card-foreground">Real-time Chat</h1>
+        <h1 className="text-xl font-semibold text-card-foreground">The Peoples Chat</h1>
         <div className="flex items-center gap-4">
           <span className="text-sm text-muted-foreground">Logged in as {username}</span>
           <button
