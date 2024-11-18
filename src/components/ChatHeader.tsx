@@ -15,7 +15,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({ username }) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <h1 className="text-2xl font-bold text-card-foreground tracking-tight">
-              Real-time Chat
+              The Peoples
             </h1>
           </div>
           <div className="flex items-center gap-4">

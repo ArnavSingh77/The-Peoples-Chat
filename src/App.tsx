@@ -6,6 +6,32 @@ import { TypingIndicator } from './components/TypingIndicator';
 import { ChatHeader } from './components/ChatHeader';
 import { LoginScreen } from './components/LoginScreen';
 import { MessageInput } from './components/MessageInput';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
+//File upload functionality
+/*
+const handleFileUpload = async (file: File) => {
+  if (!file || !username) return;
+
+  try {
+    const storageRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    await addDoc(collection(db, 'messages'), {
+      text: file.type.startsWith('image/') ? '[Image]' : '[File]',
+      username,
+      timestamp: serverTimestamp(),
+      isRead: false,
+      fileURL: downloadURL,
+      fileName: file.name,
+      fileType: file.type
+    });
+  } catch (error) {
+    console.error('File upload error:', error);
+  }
+};
+*/
 
 interface Message {
   id: string;
@@ -17,7 +43,11 @@ interface Message {
     username: string;
     text: string;
   };
+  mentions?: string[];
 }
+
+//Mention Detection
+
 
 function App() {
   const [username, setUsername] = useState('');
