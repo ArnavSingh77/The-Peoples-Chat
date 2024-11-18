@@ -11,7 +11,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({ username }) => {
 
   return (
     <header className="fixed top-4 left-4 right-4 z-50">
-      <div className="bg-card/80 backdrop-blur-md border border-border/30 rounded-xl shadow-xl px-6 py-4 max-w-5xl mx-auto">
+      <div className="bg-card/80 backdrop-blur-md border border-border/30 rounded-full shadow-xl px-6 py-4 max-w-5xl mx-auto">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <h1 className="text-2xl font-bold text-card-foreground tracking-tight">
