@@ -1,3 +1,3 @@
-# The-Peoples-Chat
+# The Peoples Chat
 
-[Edit in StackBlitz next generation editor ⚡️](https://stackblitz.com/~/github.com/ArnavSingh77/The-Peoples-Chat)
+[Simple Chat application for me and my friends ⚡️](https://the-peoples.netlify.app)
