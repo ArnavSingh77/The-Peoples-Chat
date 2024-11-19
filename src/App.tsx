@@ -1,37 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from './lib/firebase';
 import { ChatMessage } from './components/ChatMessage';
 import { TypingIndicator } from './components/TypingIndicator';
 import { ChatHeader } from './components/ChatHeader';
 import { LoginScreen } from './components/LoginScreen';
 import { MessageInput } from './components/MessageInput';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-
-//File upload functionality
-/*
-const handleFileUpload = async (file: File) => {
-  if (!file || !username) return;
-
-  try {
-    const storageRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
-    const snapshot = await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(snapshot.ref);
-
-    await addDoc(collection(db, 'messages'), {
-      text: file.type.startsWith('image/') ? '[Image]' : '[File]',
-      username,
-      timestamp: serverTimestamp(),
-      isRead: false,
-      fileURL: downloadURL,
-      fileName: file.name,
-      fileType: file.type
-    });
-  } catch (error) {
-    console.error('File upload error:', error);
-  }
-};
-*/
 
 interface Message {
   id: string;
@@ -43,11 +17,7 @@ interface Message {
     username: string;
     text: string;
   };
-  mentions?: string[];
 }
-
-//Mention Detection
-
 
 function App() {
   const [username, setUsername] = useState('');
@@ -62,6 +32,7 @@ function App() {
   } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const currentTypingDocRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isUsernameSet) return;
@@ -81,7 +52,27 @@ function App() {
       });
     });
 
-    return () => unsubscribe();
+    // Listen for typing indicators
+    const typingUnsubscribe = onSnapshot(collection(db, 'typing'), (snapshot) => {
+      const now = Date.now();
+      const activeTypers = snapshot.docs
+        .filter(doc => {
+          const data = doc.data();
+          const timestamp = data.timestamp?.toMillis() || 0;
+          return now - timestamp < 3000 && data.username !== username;
+        })
+        .map(doc => doc.data().username);
+      
+      setTypingUsers([...new Set(activeTypers)]);
+    });
+
+    return () => {
+      unsubscribe();
+      typingUnsubscribe();
+      if (currentTypingDocRef.current) {
+        deleteDoc(doc(db, 'typing', currentTypingDocRef.current)).catch(console.error);
+      }
+    };
   }, [isUsernameSet, username]);
 
   useEffect(() => {
@@ -103,23 +94,30 @@ function App() {
   const handleTyping = async () => {
     if (!username) return;
     
-    const typingRef = doc(db, 'typing', username);
-    await addDoc(collection(db, 'typing'), { 
-      username, 
-      timestamp: serverTimestamp() 
-    }).catch(console.error);
-    
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-    
-    typingTimeoutRef.current = setTimeout(async () => {
-      try {
-        await updateDoc(typingRef, { typing: false });
-      } catch (error) {
-        console.error('Error updating typing status:', error);
+
+    try {
+      if (currentTypingDocRef.current) {
+        await deleteDoc(doc(db, 'typing', currentTypingDocRef.current));
       }
-    }, 2000);
+
+      const typingDoc = await addDoc(collection(db, 'typing'), {
+        username,
+        timestamp: serverTimestamp()
+      });
+      currentTypingDocRef.current = typingDoc.id;
+
+      typingTimeoutRef.current = setTimeout(async () => {
+        if (currentTypingDocRef.current) {
+          await deleteDoc(doc(db, 'typing', currentTypingDocRef.current));
+          currentTypingDocRef.current = null;
+        }
+      }, 3000);
+    } catch (error) {
+      console.error('Error updating typing status:', error);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -127,6 +125,11 @@ function App() {
     if (!newMessage.trim() || !username) return;
 
     try {
+      if (currentTypingDocRef.current) {
+        await deleteDoc(doc(db, 'typing', currentTypingDocRef.current));
+        currentTypingDocRef.current = null;
+      }
+
       await addDoc(collection(db, 'messages'), {
         text: newMessage,
         username,
@@ -135,7 +138,7 @@ function App() {
         replyTo: replyTo ? {
           username: replyTo.username,
           text: replyTo.text
-        } : undefined
+        } : null
       });
       setNewMessage('');
       clearReply();
@@ -158,8 +161,8 @@ function App() {
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto h-screen flex flex-col">
         <ChatHeader username={username} />
-
-        <div className="flex-1 overflow-y-auto p-4">
+        
+        <div className="flex-1 overflow-y-auto p-4 mt-24">
           {messages.map((message) => (
             <ChatMessage
               key={message.id}
@@ -168,9 +171,9 @@ function App() {
               onReply={handleReply}
             />
           ))}
-          {typingUsers.map(user => (
-            user !== username && <TypingIndicator key={user} username={user} />
-          ))}
+          {typingUsers.length > 0 && (
+            <TypingIndicator usernames={typingUsers} />
+          )}
           <div ref={messagesEndRef} />
         </div>
 
